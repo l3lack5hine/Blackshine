@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>คำนวณประสิทธิภาพการผลิต</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 600px; margin: auto; }
+        input { margin: 5px 0; width: 200px; }
+        .result { margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>คำนวณประสิทธิภาพการผลิต</h1>
+        <form id="calcForm">
+            <label>SAM Style:</label><br>
+            <input type="number" step="0.01" id="sam" required><br>
+
+            <label>จำนวนคนทำงานปกติ (8 ชม.):</label><br>
+            <input type="number" id="normalPeople" required><br>
+
+            <label>จำนวนคนทำงาน OT:</label><br>
+            <input type="number" id="otPeople" required><br>
+
+            <label>ชั่วโมง OT/วัน (ใส่เฉพาะ ชม.โอที):</label><br>
+            <input type="number" step="0.01" id="otHours" required><br>
+
+            <label>ผลผลิตที่เย็บได้/วัน:</label><br>
+            <input type="number" id="actual" required><br>
+
+            <button type="button" onclick="calculate()" style="margin-top:10px;">คำนวณ</button>
+        </form>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        function calculate() {
+            const sam = parseFloat(document.getElementById('sam').value);
+            const normalPeople = parseInt(document.getElementById('normalPeople').value);
+            const otPeople = parseInt(document.getElementById('otPeople').value);
+            const otHours = parseFloat(document.getElementById('otHours').value);
+            const actual = parseInt(document.getElementById('actual').value);
+
+            // คำนวณ Total Time (นาที)
+            const totalTime = (normalPeople * 8 * 60) + (otPeople * otHours * 60);
+
+            // คำนวณ Expected Output
+            const expected = totalTime / sam;
+
+            // คำนวณประสิทธิภาพ (%EFF)
+            const eff = (actual / expected) * 100;
+
+            // แสดงผลลัพธ์
+            let resultHtml = `<h3>ผลลัพธ์:</h3><p>ประสิทธิภาพ: ${eff.toFixed(2)}%</p>`;
+
+            // คำนวณจำนวนงานที่ต้องเพิ่ม
+            if (eff >= 0 && eff <= 65.49) {
+                const targetEff = 65.50;
+                const targetActual = (targetEff * expected) / 100;
+                const additionalWork = Math.round(targetActual - actual);
+
+                // ตรวจสอบเศษของประสิทธิภาพ
+                const effFraction = eff % 1;
+                if (effFraction >= 0.39 && effFraction <= 0.49) {
+                    const targetActual50 = (65.50 * expected) / 100;
+                    const additionalWork50 = Math.round(targetActual50 - actual);
+                    resultHtml += `<p>ประสิทธิภาพอยู่ในช่วง 0 - 65.49% ควรเพิ่มงานอีก ${additionalWork50} ชิ้น เพื่อให้ถึง 65.50%</p>`;
+                    // คำนวณงานรายชั่วโมง
+                    const totalHours = 8 + otHours;
+                    const workPerHour = targetActual50 / totalHours;
+                    resultHtml += `<p>ต้องทำงาน ${workPerHour.toFixed(2)} ชิ้นต่อชั่วโมง</p>`;
+                    for (let hour = 1; hour <= totalHours; hour++) {
+                        resultHtml += `<p>ชั่วโมงที่ ${hour}: ${workPerHour.toFixed(2)} ชิ้น</p>`;
+                    }
+                } else if (effFraction >= 0.7 && effFraction <= 0.9) {
+                    resultHtml += `<p>ประสิทธิภาพอยู่ในช่วง 0 - 65.49% ควรเพิ่มงานอีก ${additionalWork} ชิ้น เพื่อให้ถึงจำนวนเต็ม</p>`;
+                    // คำนวณงานรายชั่วโมง
+                    const totalHours = 8 + otHours;
+                    const workPerHour = (actual + additionalWork) / totalHours;
+                    resultHtml += `<p>ต้องทำงาน ${workPerHour.toFixed(2)} ชิ้นต่อชั่วโมง</p>`;
+                    for (let hour = 1; hour <= totalHours; hour++) {
+                        resultHtml += `<p>ชั่วโมงที่ ${hour}: ${workPerHour.toFixed(2)} ชิ้น</p>`;
+                    }
+                } else {
+                    resultHtml += `<p>ประสิทธิภาพอยู่ในช่วง 0 - 65.49% ควรเพิ่มงานอีก ${additionalWork} ชิ้น เพื่อให้ถึง 65.50%</p>`;
+                    // คำนวณงานรายชั่วโมง
+                    const totalHours = 8 + otHours;
+                    const workPerHour = targetActual / totalHours;
+                    resultHtml += `<p>ต้องทำงาน ${workPerHour.toFixed(2)} ชิ้นต่อชั่วโมง</p>`;
+                    for (let hour = 1; hour <= totalHours; hour++) {
+                        resultHtml += `<p>ชั่วโมงที่ ${hour}: ${workPerHour.toFixed(2)} ชิ้น</p>`;
+                    }
+                }
+            } else if (eff >= 65.79 && eff <= 66.00) {
+                const targetEff = 66.00;
+                const targetActual = (targetEff * expected) / 100;
+                const additionalWork = Math.round(targetActual - actual);
+                resultHtml += `<p>ประสิทธิภาพอยู่ในช่วง 65.79% ควรเพิ่มงานอีก ${additionalWork} ชิ้น เพื่อให้ถึง 66.00%</p>`;
+                // คำนวณงานรายชั่วโมง
+                const totalHours = 8 + otHours;
+                const workPerHour = targetActual / totalHours;
+                resultHtml += `<p>ต้องทำงาน ${workPerHour.toFixed(2)} ชิ้นต่อชั่วโมง</p>`;
+                for (let hour = 1; hour <= totalHours; hour++) {
+                    resultHtml += `<p>ชั่วโมงที่ ${hour}: ${workPerHour.toFixed(2)} ชิ้น</p>`;
+                }
+            } else {
+                resultHtml += `<p>อยู่ในช่วงประสิทธิภาพอื่น</p>`;
+                // คำนวณงานรายชั่วโมง
+                const totalHours = 8 + otHours;
+                const workPerHour = actual / totalHours;
+                resultHtml += `<p>ต้องทำงาน ${workPerHour.toFixed(2)} ชิ้นต่อชั่วโมง</p>`;
+                for (let hour = 1; hour <= totalHours; hour++) {
+                    resultHtml += `<p>ชั่วโมงที่ ${hour}: ${workPerHour.toFixed(2)} ชิ้น</p>`;
+                }
+            }
+
+            document.getElementById('result').innerHTML = resultHtml;
+        }
+    </script>
+</body>
+</html>
